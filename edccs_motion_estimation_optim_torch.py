@@ -9,46 +9,28 @@ import time
 import argparse
 import os
 
-# geom
-# conversion_factor
-# attmap original
-# Kregion
-# proj original
-# proj shifted
 
 def main():
-    os.chdir(args.dir)
+
     # ------------------------------------------------------------------------------
     # Geometry and references
     # ------------------------------------------------------------------------------
     geometryReader = rtk.ThreeDCircularProjectionGeometryXMLFileReader.New()
-    geometryReader.SetFilename(f"geom.xml")
+    geometryReader.SetFilename(args.geometry)
     geometryReader.GenerateOutputInformation()
     geometry = geometryReader.GetGeometry()
-    rotation_angles = (np.asarray(geometry.GetGantryAngles()))
-    N = len(rotation_angles)
-    conversion_factor_path = f"conversion_factor.mha"
-    conversion_factor = VolumeClass(conversion_factor_path)
-    attenuation_map = itk.imread(f"attenuation_map_original.mha")
-    K_region = VolumeClass(f"K_rotate.mha")
+    attenuation_map = itk.imread(args.attenuationmap)
+    K_region = VolumeClass(args.k_region)
 
 
-
-    # ------------------------------------------------------------------------------
-    # Generate random spheres and random shifts
-    # ------------------------------------------------------------------------------
-    p = "rtk"
-    projection_original = itk.imread( f"projection_{p}_original.mha")
-    projection_shifted = itk.imread( f"projection_{p}_shifted.mha")
-    projection_with_motion = MotionAddFromTwoProjection(projection_original, projection_shifted,
-                                                        m = 30, no_of_heads = 2, no_of_projections= N)
-    projection_with_motion = ProjectionsClass(projection_with_motion.itk_image, geometry)
+    projection_with_motion_itk = itk.imread(args.projections)
+    projection_with_motion = ProjectionsClass(projection_with_motion_itk, geometry)
 
 
     em_slice = [0, projection_with_motion.size[1]]
     print(f"em slice: ", em_slice)
 
-    optim = MotionCorrection(projection_with_motion, attenuation_map, K_region, geometry, conversion_factor_path,
+    optim = MotionCorrection(projection_with_motion, attenuation_map, K_region, geometry,
                      30, em_slice, no_of_heads=2)
 
 
@@ -61,10 +43,6 @@ def main():
     dtype=torch.float64
     min_motion = torch.Tensor([0,20,50, -torch.pi/10-torch.pi/10, -torch.pi/15-torch.pi/10, -torch.pi/20-torch.pi/10]).to(dev).to(dtype)
     max_motion = torch.Tensor([20,40,70, -torch.pi/10+torch.pi/10, -torch.pi/15+torch.pi/10, -torch.pi/20+torch.pi/10]).to(dev).to(dtype)
-
-    # min_motion = torch.Tensor(true_motion).to(dev)
-    # max_motion = torch.Tensor(true_motion).to(dev)
-
 
 
     motion_scaled = torch.rand(6, device=dev, dtype=dtype)
@@ -97,15 +75,19 @@ def main():
         l_mse_rotation.append(mse_r)
 
 
-    np.save(f"l_edccs_{nepochs}.npy", l_edcc)
-    np.save(f"l_mse_rotation_{nepochs}.npy", l_mse_rotation)
-    np.save(f"l_mse_translation_{nepochs}.npy", l_mse_translation)
+    np.save(os.path.join(args.output_folder,f"l_edccs_{nepochs}.npy"), l_edcc)
+    np.save(os.path.join(args.output_folder,f"l_mse_rotation_{nepochs}.npy"), l_mse_rotation)
+    np.save(os.path.join(args.output_folder,f"l_mse_translation_{nepochs}.npy"), l_mse_translation)
 
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dir")
+    parser.add_argument("-a","--attenuationmap")
+    parser.add_argument("-k","--k_region")
+    parser.add_argument("-g","--geometry")
+    parser.add_argument("-p","--projections", help="Projections with motion")
+    parser.add_argument("-o","--output_folder")
     args = parser.parse_args()
 
     main()

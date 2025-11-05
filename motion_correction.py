@@ -38,7 +38,7 @@ class MotionCorrection(ProjectionsClass):
     :type no_of_heads: int 
     '''
 
-    def __init__(self, projections, attenuation_map, K_region, geometry, conversion_factor_path,
+    def __init__(self, projections, attenuation_map, K_region, geometry,
                  m, em_slice, no_of_heads=1):
         if not isinstance(projections, ProjectionsClass):
             self.projections = ProjectionsClass(projections, geometry)
@@ -53,7 +53,7 @@ class MotionCorrection(ProjectionsClass):
         self.attenuation_map = attenuation_map
         self.ref_exponential_projection = ExponentialProjectionsGeometryClass(self.attenuation_map, self.geometry,
                                                                               like = self.projections.itk_image,  voxelized_region = self.K_region)
-        self.ref_exponential_projection.read_conversion_factor(conversion_factor_path)
+        # self.ref_exponential_projection.read_conversion_factor(conversion_factor_path)
         self.N_proj = len(self.angles_rad)
         self.m = m
         self.em_slice = em_slice

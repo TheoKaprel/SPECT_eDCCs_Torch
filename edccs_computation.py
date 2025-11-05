@@ -95,7 +95,6 @@ if __name__ == '__main__':
     parser.add_argument("-k","--k_region")
     parser.add_argument("-g","--geometry")
     parser.add_argument("-p","--projections")
-    parser.add_argument("-o","--output")
     args = parser.parse_args()
 
     main()
