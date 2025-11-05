@@ -11,7 +11,7 @@ To just compute the conversion factor with PyTorch:
 
 To compute (with torch) and plot eDCCs:
 
-    python ...
+    python edccs_computation.py --attenuationmap attenuation_map.mha --k_region K_region.mha --geometry geom.xml --projections projections.mha
 
 ### Motion estimation
 
